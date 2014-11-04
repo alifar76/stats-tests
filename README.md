@@ -50,7 +50,7 @@ If we assume that the male distribution and the female distribution minus the $2
 
 We decided that a median-based, non-parametric significance test would be the most appropriate way to compare the two distributions, because of the large amount of variance in the distributions.
 
-When we use our Wilcoxon Rank Sum Test, we find that there is not a statistically significant difference between the two distributions after we remove the $215 profiles.
+When we use our Wilcoxon Rank Sum Test, we don't have enough evidence to say that the two distributions are different after we remove the $215 profiles.
 
 ####Is it valid to remove the $215 profiles?
 
@@ -68,12 +68,12 @@ Via the methods we used above, we answered the question:
 
 We looked at long-run frequency. We did not answer the question:
 
-> What is the probability that a male profile takes longer to fund than a female profile?
+> What is the probability that a male profile takes longer to fund than a female profile, knowing what we know from this single experiment?
 
-because we defined 'likelihood' as the number of trials where the two distributions would be similar, divided by the total number of trials.
+because we defined 'likelihood' as the number of experiements where the two distributions would be similar, divided by the total number of experiments.
 
-With Bayesian methods, we can answer the probability question. The interpretation of its results is more intuitive, and we can focus on the probability of *this* experiment, as opposed to many trials of the experiment.
+With Bayesian methods, we can answer the probability question. The interpretation of its results is more intuitive, and we can focus on the probability of *this* experiment, as opposed to many trials of the experiment. The downside to the Bayesian approach is that we have to state our subjective belief that the distributions were similar or different before the experiment took place.
 
-So, in the next notebook, I will try a Bayesian approach to find if female profiles are funded faster than male profiles.
+So in the next notebook, I will try a Bayesian approach to find if female profiles are funded faster than male profiles.
 
 If you would like to see a more comprehensive assessment of the methods we used above, [view the full iPython notebook](http://nbviewer.ipython.org/github/aok1425/stats-tests/blob/master/frequentist.ipynb).

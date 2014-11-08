@@ -1,79 +1,79 @@
-#Are female crowdfunding profiles funded faster than male profiles?
+#Using a Bayesian approach: Are female crowdfunding profiles funded faster than male profiles?
 
-My eventual goal is to create a machine learning model to predict how long it takes to fully fund a profile. But first, let's do some exploratory data analysis and basic inferential statistics to see if there are differences in the time it takes to fund a profile by sex.
+A Bayesian approach allows us to make direct probability statements. The interpretation of its results is simpler than interpreting p-values or confidence intervals. 
 
-##Exploratory data analysis
+The main drawback to a Bayesian approach is that we must specify our prior belief about the situation, and this inserts some subjectiveness into our calculation. Bayesians respond that we can create very weak priors that don't much affect the results, which will allow the data to dominate the final result.
 
-Both distributions are heavily right-skewed.
+In this case, our priors are a) the average number of hours to fund a male patient, and b) the average number of hours to fund a female patient. We will look at the data to inform our 'prior' belief; this method is called Empirical Bayes. We will also test various priors to see if they affect our final result much.
 
-![histogram](https://raw.githubusercontent.com/aok1425/stats-tests/master/imgs/histogram.png "")
+##Viewing our data as a Poisson process
 
-![boxplot](https://github.com/aok1425/stats-tests/raw/master/imgs/boxplot.png "")
+The data we have is the amount of time it takes to fund a profile. For each profile, we can think of the time it takes to be funded as an Exponential random variable. The story for the Exponential, as taken from [the notes for](https://bayesrule.files.wordpress.com/2014/07/probability_cheatsheet_140718.pdf) Joe Blitzstein's [Intro to Probability course](http://www.stat110.net), is:
 
-The difference in the average number of hours to fund a male profile and a female profile is 23.2 hours. The difference in the median number of hours is 11.0 hours.
+> You are in a grassy field at night, looking at shooting stars. The time in between each shooting star can be modeled as $Exponential(\beta)$, where $\beta$ is the expected amount of time until a shooting star passes.
 
-##Why is there a difference?
+We can think of our data, the number of hours to fund a profile, as coming out of a random number generator. This number generator is given the expected number of hours for a profile to be funded, and it gives us sample numbers. In this sense, we view the data as a random variable. (In the classical context, the data is not random. It either is a certain figure, or it isn't.)
 
-My first guess is that male profiles may have higher amount requests than female profiles. Let's look at the distribution of funding amounts by sex.
+##Assumption violations of the Exponential distribution
 
-![target_amt1](https://github.com/aok1425/stats-tests/raw/master/imgs/target_amt1.png "")
+In the example, we are measuring the time between each shooting star. But when we measure time-to-fund, it's not that one profile is posted onto the website, we measure how long it takes to be funded, then after it's funded, another profile is posted, and we measure the time for that to be funded. Instead, there are multiple profiles posted to the site, and we are starting our timer from when the profile is posted to when it is funded. In the lingo, we are not strictly looking at inter-arrival times.
 
-I know that females often have a profile that always has the same request amount, and is unique only to female profiles. Let's remove all profiles with that request amount of $215.
+An important property of the Exponential distribution is that it is memoryless. The time it took for one shooting star doesn't affect the time until the next shooting star. But for us, a donor might fully fund multiple profiles in a session, causing the latter profiles' time-to-fund to be affected by its predecessors'. This violation of the memoryless property stems from the fact that we're not strictly measuring interarrival times.
 
-![target_amt2](https://github.com/aok1425/stats-tests/raw/master/imgs/target_amt2.png "")
+Another assumption we violate is that the times-to-fund are identically distributed. To us sitting in a grassy field, all the shooting stars are the same. A certain kind of shooting star does not occur more frequently than another. But our profiles can more easily be categorized into various groups. For example, profiles that request more money take longer to fund.
 
-Now, the request amounts are more similar than before.
+Even though our data violates the assumptions of the Exponential distribution, and more broadly, the Poisson process, it is close enough that the results we get are applicable to our problem.
 
-After correcting for request amount, the difference between the averages is 20.5 hours. The difference between the medians is 10.5 hours. So those deleted profiles didn't account for much of a difference, at least regarding these two measures.
+![scatter](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/1-scatter.png "")
 
-##Is the difference statistically signficant?
+The correlation between the number of hours to fund a profile, and its requested funding amount, is 30%--not very strong.
 
-Before we determine whether the two distributions are statistically significantly different, we need to choose what measure we will use to define the difference. A popular choice is the mean. But because of the large amount of variance and the right-skewness, the mean is very sensitive to the few outlying large values.
+If the correlation were 100%, for every extra $100 a profile requests, its time-to-fund would be an extra 0.7 hours.
 
-A better choice is the median. It is less sensitive to outliers.
+##Fitting the exponential distribution to our data
 
-Let's perform a significance test based on the medians, a Wilcoxon Rank Sum Test. It is the non-parametric equivalent of the two-sample t-test, and it does not require a Normal distribution.
+![hist](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/2-histogram.png "")
 
-###Wilcoxon Rank Sum Test
+#Using conjugate priors, Gamma distribution
 
-The Wilcoxon Rank Sum Test tests whether two groups have indentical distributions.
+If our data fits an Exponential distribution, what distribution should we choose to state our prior belief of the number of hours to fund a male profile and a female profile? If we use a conjugate prior, then our final result will be analytically tractable, and we will be able to come to a mathematically clean solution.
 
-Our null hypothesis is that the two sets of measurements are drawn from the same distribution. Our alternative hypothesis is that the values in one sample are more likely to be larger than the values in the other sample.
+The conjugate prior here is the $Gamma(\alpha,\beta)$ distribution, where $\beta$ is the same as in the $Exponential(\beta)$ distribution.
 
-According to the Wilcoxon Rank Sum test, if we compare the distributions of the number of hours to fund a male profile and the number of hours to fund a female profile, there is a statistically signficant difference between the two, with `p = 0.03`. 
+The inutitive story for the Gamma distribution is:
 
-However, if we remove the $215 profiles from the female distribution, we can't reject the null hypothesis, and we can't say that it takes more hours to fund a male profile than a female, or vice-versa. 
+> We are again looking at shooting stars. We want to wait to see $\alpha$ stars before we go home. The amount of time between each shooting star can be modeled as $Exponential(\beta)$, where $\beta$ is the expected amount of time until a shooting star passes. The probability that all $\alpha$ shooting stars will occur by $X$ total time is modeled by $Gamma(\alpha, \beta)$.
 
-If we assume that the male distribution and the female distribution minus the $215 profiles are each drawn from the same distribution, the chance that we would get the Rank Sum result that we did is 11% (`p = 0.11`). This result is not unlikely enough that we would reject our initial assumption.
+Let's model the time to fund a single profile via the $Gamma(\alpha, \beta)$ distribution, where $\alpha=1$. If we want to see how long it takes for one profile to be funded, that is the same story as for the $Exponential(\beta)$ distribution. $Gamma(1, \beta) = Exponential(\beta)$.
 
-##Conclusion
+![gamma_single](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/3-gamma_single.png "")
 
-We decided that a median-based, non-parametric significance test would be the most appropriate way to compare the two distributions, because of the large amount of variance in the distributions.
+![expon](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/4-expon.png "")
 
-When we use our Wilcoxon Rank Sum Test, we don't have enough evidence to say that the two distributions are different after we remove the $215 profiles.
+Let's input our actual data. Below shows the probability that all 1108 profiles will be funded within $X$ hours.
 
-####Is it valid to remove the $215 profiles?
+![expon](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/5-gamma_all_data.png "")
 
-Ideally, the two groups would have profiles with the same distibution of funding request amounts, and each pair of male-female profiles with the same funding request amount would be presented to the user at the same time. This is the ideal of the A/B test. Because we can't achieve this ideal, we want the two distributions to be on as much of an 'equal playing field' as possible. Removing the $215 profiles makes the distributions of the male and female funding request amounts more similar.
+As our number of profiles, or sample size, increases, the probability that all profiles will be funded within $X$ hours becomes a Normal distribution, as we expect via the Central Limit Theorem.
 
-On the other hand, by simply removing a subset of profiles, we've removed the instances in which users would have donated to other profiles. We'll never know how that would have affected the male and female distributions.
+#Choosing our prior parameter values via Empirical Bayes
 
-So while there is a downside to removing a subset of profiles, I think the fact that the fact that the funding request amount distributions are more equal justifies the action.
+For both our prior belief for the number of hours to fund a male profile, and the number of hours to fund a female profile, we will say that we know about 1 profile, and we will set the expected time for that that profile to be funded to be the median (or mean?) of all the profiles. We will choose:
 
-##Next steps
+$$Gamma(\alpha = 1, \beta = 46.36)$$
 
-Via the methods we used above, we answered the question:
+The fact that we are looking at our post-experiment data to choose our 'prior' belief as to the number of hours to fund a profile is an example of the Empirical Bayes technique. Traditionally, we should not use post-experiment data to choose our priors.
 
-> If we replicated this experiment many times, with different results each time, what is the likelihood that we would get the female distribution (minus the $215 profiles) to be as dissimilar from the male distribution as we did?
+![expon](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/6-posterior_example_1.png "")
 
-We looked at long-run frequency. We did not answer the question:
+#Our updated beliefs after we see the data, the posterior distribution
 
-> What is the probability that a male profile takes longer to fund than a female profile, knowing what we know from this single experiment?
+Our prior belief was that it would take 46 hours to fund a profile, for both males and females, having 'seen' 1 profile. The data we've collected shows us how long it took to fund each male profile, and each female profile. Now, we can combine our prior belief with the data to get the probability that it would take $X$ hours to fund all our 524 male profiles, and similarly for all our 584 female profiles. This probability distribution is called the posterior distribution.
 
-because we defined 'likelihood' as the number of experiements where the two distributions would be similar, divided by the total number of experiments.
+Our posterior distribution here, because I used the $Gamma(\alpha, \beta)$ conjugate prior, is $Gamma(\alpha + 1, \frac{\beta + x}{2})$ for one $Exponential(\beta)$ experiment when $\alpha = 1$ and $n = 1$, or we started with one new profile that I've learned about and we've learned about one additional profile.
 
-With Bayesian methods, we can answer the probability question. The interpretation of its results is more intuitive, and we can focus on the probability of *this* experiment, as opposed to many trials of the experiment. The downside to the Bayesian approach is that we have to state our subjective belief that the distributions were similar or different before the experiment took place.
+So, let's say that we have a new $Exponential(\beta)$ profile, and it took 75 hours to fund it.
 
-So in the next notebook, I will try a Bayesian approach to find if female profiles are funded faster than male profiles.
+My updated posterior distribution is $Gamma(1 + 1, \frac{46 + 75}{2})$.
 
-If you would like to see a more comprehensive assessment of the methods we used above, [view the full iPython notebook](http://nbviewer.ipython.org/github/aok1425/stats-tests/blob/master/frequentist.ipynb).
+![expon](https://github.com/aok1425/stats-tests/raw/master/bayesian_imgs/7-male_female_dists.png "")
